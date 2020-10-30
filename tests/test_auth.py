@@ -58,6 +58,6 @@ def test_003_init_secondary():
 def test_004_failover():
     print()
     print("Calling pgautofailover.failover() on the monitor")
-    cluster.monitor.failover()
+    cluster.monitor.failover(formation="auth")
     assert node2.wait_until_state(target_state="primary")
     assert node1.wait_until_state(target_state="secondary")

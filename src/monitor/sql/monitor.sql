@@ -53,7 +53,7 @@ select formationid, nodeid, groupid, nodehost, nodeport,
   from pgautofailover.node;
 
 select * from pgautofailover.get_primary('unknown formation');
-select * from pgautofailover.get_primary(group_id => -10);
+select * from pgautofailover.get_primary(group__id => -10);
 select * from pgautofailover.get_primary();
 
 select * from pgautofailover.get_primary('default', 0);

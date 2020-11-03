@@ -195,7 +195,7 @@ grant execute on function pgautofailover.set_node_system_identifier(bigint,bigin
 
 CREATE FUNCTION pgautofailover.set_group_system_identifier
  (
-    IN group_id            bigint,
+    IN group__id            bigint,
     IN node_sysidentifier  bigint,
    OUT node_id          bigint,
    OUT node_name        text,
@@ -206,7 +206,7 @@ RETURNS setof record LANGUAGE SQL STRICT SECURITY DEFINER
 AS $$
       update pgautofailover.node
          set sysidentifier = node_sysidentifier
-       where groupid = set_group_system_identifier.group_id
+       where groupid = set_group_system_identifier.group__id
          and sysidentifier = 0
    returning nodeid, nodename, nodehost, nodeport;
 $$;
@@ -259,7 +259,7 @@ CREATE FUNCTION pgautofailover.node_active
  (
     IN formation_id           		text,
     IN node_id        		        int,
-    IN group_id       		        int,
+    IN group__id       		        int,
     IN current_group_role     		pgautofailover.replication_state default 'init',
     IN current_pg_is_running  		bool default true,
     IN current_lsn			  		pg_lsn default '0/0',
@@ -281,7 +281,7 @@ grant execute on function
 CREATE FUNCTION pgautofailover.get_nodes
  (
     IN formation_id     text default 'default',
-    IN group_id         int default NULL,
+    IN group__id         int default NULL,
    OUT node_id          int,
    OUT node_name        text,
    OUT node_host        text,
@@ -301,7 +301,7 @@ grant execute on function pgautofailover.get_nodes(text,int)
 CREATE FUNCTION pgautofailover.get_primary
  (
     IN formation_id      text default 'default',
-    IN group_id          int default 0,
+    IN group__id          int default 0,
    OUT primary_node_id   int,
    OUT primary_name      text,
    OUT primary_host      text,
@@ -434,7 +434,7 @@ grant execute on function pgautofailover.remove_node(text,int)
 CREATE FUNCTION pgautofailover.perform_failover
  (
   formation_id text default 'default',
-  group_id     int  default 0
+  group__id     int  default 0
  )
 RETURNS void LANGUAGE C STRICT SECURITY DEFINER
 AS 'MODULE_PATHNAME', $$perform_failover$$;
@@ -530,7 +530,7 @@ comment on function pgautofailover.last_events(text,int)
 CREATE FUNCTION pgautofailover.last_events
  (
   formation_id text,
-  group_id     int,
+  group__id     int,
   count        int default 10
  )
 RETURNS SETOF pgautofailover.event LANGUAGE SQL STRICT
@@ -544,7 +544,7 @@ with last_events as
            candidatepriority, replicationquorum, description
       from pgautofailover.event
      where formationid = formation_id
-       and groupid = group_id
+       and groupid = group__id
   order by eventid desc
      limit count
 )
@@ -561,7 +561,7 @@ CREATE FUNCTION pgautofailover.current_state
    OUT nodename             text,
    OUT nodehost             text,
    OUT nodeport             int,
-   OUT group_id             int,
+   OUT group__id             int,
    OUT node_id              bigint,
    OUT current_group_state  pgautofailover.replication_state,
    OUT assigned_group_state pgautofailover.replication_state,
@@ -588,12 +588,12 @@ comment on function pgautofailover.current_state(text)
 CREATE FUNCTION pgautofailover.current_state
  (
     IN formation_id         text,
-    IN group_id             int,
+    IN group__id             int,
    OUT formation_kind       text,
    OUT nodename             text,
    OUT nodehost             text,
    OUT nodeport             int,
-   OUT group_id             int,
+   OUT group__id             int,
    OUT node_id              bigint,
    OUT current_group_state  pgautofailover.replication_state,
    OUT assigned_group_state pgautofailover.replication_state,
@@ -611,7 +611,7 @@ AS $$
      from pgautofailover.node
      join pgautofailover.formation using(formationid)
     where formationid = formation_id
-      and groupid = group_id
+      and groupid = group__id
  order by groupid, nodeid;
 $$;
 
@@ -752,7 +752,7 @@ grant execute on function
 create function pgautofailover.synchronous_standby_names
  (
     IN formation_id text default 'default',
-    IN group_id     int default 0
+    IN group__id     int default 0
  )
 returns text language C strict
 AS 'MODULE_PATHNAME', $$synchronous_standby_names$$;
@@ -769,7 +769,7 @@ CREATE FUNCTION pgautofailover.formation_settings
  (
     IN formation_id         text default 'default',
    OUT context              text,
-   OUT group_id             int,
+   OUT group__id             int,
    OUT node_id              bigint,
    OUT nodename             text,
    OUT setting              text,
@@ -787,7 +787,7 @@ AS $$
 
   -- context: formation, number_sync_standbys
   select 'formation' as context,
-         NULL as group_id, NULL as node_id, formationid as nodename,
+         NULL as group__id, NULL as node_id, formationid as nodename,
          'number_sync_standbys' as setting,
          cast(number_sync_standbys as text) as value
     from pgautofailover.formation

@@ -1495,6 +1495,10 @@ pmStatusFromString(const char *postmasterStatus)
 	{
 		return POSTMASTER_STATUS_STANDBY;
 	}
+	else if (strcmp(postmasterStatus, PM_STATUS_DTM_RECOVERED) == 0)
+	{
+		return POSTMASTER_STATUS_DTMREADY;
+	}
 
 	log_warn("Failed to read Postmaster status: \"%s\"", postmasterStatus);
 	return POSTMASTER_STATUS_UNKNOWN;

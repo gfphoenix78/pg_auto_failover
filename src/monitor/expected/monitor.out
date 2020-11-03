@@ -138,7 +138,7 @@ reportedrepstate    | unknown
 
 select * from pgautofailover.get_primary('unknown formation');
 ERROR:  group has no writable node right now
-select * from pgautofailover.get_primary(group_id => -10);
+select * from pgautofailover.get_primary(group__id => -10);
 ERROR:  group has no writable node right now
 select * from pgautofailover.get_primary();
 -[ RECORD 1 ]---+----------

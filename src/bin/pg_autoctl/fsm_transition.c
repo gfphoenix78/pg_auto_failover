@@ -807,7 +807,7 @@ fsm_checkpoint_and_stop_postgres(Keeper *keeper)
 		 * to make sure to RESET this value so that our own configuration
 		 * setting takes effect.
 		 */
-		if (pgSetup->control.pg_control_version >= 1200)
+		if (get_pg_control_version(pgSetup->control.pg_control_version) >= 1200)
 		{
 			if (!pgsql_reset_primary_conninfo(pgsql))
 			{
@@ -1294,7 +1294,7 @@ fsm_fast_forward(Keeper *keeper)
 	 * Postgres 10 does not have pg_replication_slot_advance(), so we don't
 	 * support replication slots on standby nodes there.
 	 */
-	if (pgSetup->control.pg_control_version >= 1100)
+	if (get_pg_control_version(pgSetup->control.pg_control_version) >= 1100)
 	{
 		strlcpy(slotName, config->replication_slot_name, MAXCONNINFO);
 	}

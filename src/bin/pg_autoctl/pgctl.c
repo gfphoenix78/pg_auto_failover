@@ -1446,13 +1446,14 @@ pg_ctl_promote(const char *pg_ctl, const char *pgdata)
  * file or adding the configuration items to postgresql.conf and then creating
  * a standby.signal file in PGDATA.
  */
+/* pg_control_version: uses full pg_control_version, it contains the GPDB version in Greenplum */
 bool
 pg_setup_standby_mode(uint32_t pg_control_version,
 					  const char *pgdata,
 					  const char *pg_ctl,
 					  ReplicationSource *replicationSource)
 {
-	if (pg_control_version < 1000)
+	if (get_pg_control_version(pg_control_version) < 1000)
 	{
 		log_fatal("pg_auto_failover does not support PostgreSQL before "
 				  "Postgres 10, we have pg_control version number %d from "
@@ -1473,7 +1474,7 @@ pg_setup_standby_mode(uint32_t pg_control_version,
 		return false;
 	}
 
-	if (pg_control_version < 1200)
+	if (get_pg_control_version(pg_control_version) < 1200)
 	{
 		/*
 		 * Before Postgres 12 we used to place recovery configuration in a
@@ -1751,7 +1752,7 @@ pg_cleanup_standby_mode(uint32_t pg_control_version,
 						const char *pgdata,
 						PGSQL *pgsql)
 {
-	if (pg_control_version < 1200)
+	if (get_pg_control_version(pg_control_version) < 1200)
 	{
 		char recoveryConfPath[MAXPGPATH];
 

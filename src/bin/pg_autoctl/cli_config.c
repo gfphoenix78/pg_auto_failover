@@ -336,8 +336,9 @@ cli_config_check_connections(PostgresSetup *pgSetup,
 
 	if (pg_setup_standby_slot_supported(pgSetup, LOG_WARN))
 	{
-		int major = pgSetup->control.pg_control_version / 100;
-		int minor = pgSetup->control.pg_control_version % 100;
+		uint32_t pg_control_version = get_pg_control_version(pgSetup->control.pg_control_version);
+		int major = pg_control_version / 100;
+		int minor = pg_control_version % 100;
 
 		log_info("Postgres version %d.%d allows using replication slots "
 				 "on the standby nodes", major, minor);

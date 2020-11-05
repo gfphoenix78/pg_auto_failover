@@ -1841,11 +1841,12 @@ pgsetup_sslmode_to_string(SSLMode sslMode)
 bool
 pg_setup_standby_slot_supported(PostgresSetup *pgSetup, int logLevel)
 {
-	int major = pgSetup->control.pg_control_version / 100;
-	int minor = pgSetup->control.pg_control_version % 100;
+	uint32_t pg_control_version = get_pg_control_version(pgSetup->control.pg_control_version);
+	int major = pg_control_version / 100;
+	int minor = pg_control_version % 100;
 
 	/* do we have Postgres 10 (or before, though we don't support that) */
-	if (pgSetup->control.pg_control_version < 1100)
+	if (pg_control_version < 1100)
 	{
 		log_trace("pg_setup_standby_slot_supported(%d): false",
 				  pgSetup->control.pg_control_version);
@@ -1853,8 +1854,8 @@ pg_setup_standby_slot_supported(PostgresSetup *pgSetup, int logLevel)
 	}
 
 	/* Postgres 11.0 up to 11.8 included the bug */
-	if (pgSetup->control.pg_control_version >= 1100 &&
-		pgSetup->control.pg_control_version < 1109)
+	if (pg_control_version >= 1100 &&
+		pg_control_version < 1109)
 	{
 		log_level(logLevel,
 				  "Postgres %d.%d does not support replication slots "
@@ -1864,8 +1865,8 @@ pg_setup_standby_slot_supported(PostgresSetup *pgSetup, int logLevel)
 	}
 
 	/* Postgres 12.0 up to 12.3 included the bug */
-	if (pgSetup->control.pg_control_version >= 1200 &&
-		pgSetup->control.pg_control_version < 1204)
+	if (pg_control_version >= 1200 &&
+		pg_control_version < 1204)
 	{
 		log_level(logLevel,
 				  "Postgres %d.%d does not support replication slots "
@@ -1875,7 +1876,7 @@ pg_setup_standby_slot_supported(PostgresSetup *pgSetup, int logLevel)
 	}
 
 	/* Starting with Postgres 13, all versions are known to have the bug fix */
-	if (pgSetup->control.pg_control_version >= 1300)
+	if (pg_control_version >= 1300)
 	{
 		return true;
 	}

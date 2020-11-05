@@ -809,7 +809,7 @@ keeper_ensure_configuration(Keeper *keeper, bool postgresNotRunningIsOk)
 	 */
 	if (pg_setup_is_running(pgSetup))
 	{
-		if (state->pg_control_version >= 1200)
+		if (get_pg_control_version(state->pg_control_version) >= 1200)
 		{
 			/* errors are logged already, and non-fatal to this function */
 			(void) pgsql_reset_primary_conninfo(&(postgres->sqlClient));
@@ -845,7 +845,7 @@ keeper_ensure_configuration(Keeper *keeper, bool postgresNotRunningIsOk)
 
 		/* either recovery.conf or AUTOCTL_STANDBY_CONF_FILENAME */
 		char *relativeConfPathName =
-			state->pg_control_version < 1200
+			get_pg_control_version(state->pg_control_version) < 1200
 			? "recovery.conf"
 			: AUTOCTL_STANDBY_CONF_FILENAME;
 
@@ -1038,7 +1038,7 @@ keeper_maintain_replication_slots(Keeper *keeper)
 	 * The bug fix appears in the minor releases 12.4 and 11.9. Before that, we
 	 * disable the slot maintenance feature of pg_auto_failover.
 	 */
-	if (pgSetup->control.pg_control_version < 1100)
+	if (get_pg_control_version(pgSetup->control.pg_control_version) < 1100)
 	{
 		/* Postgres 10 does not have pg_replication_slot_advance() */
 		bypass = true;

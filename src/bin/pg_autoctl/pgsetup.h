@@ -231,5 +231,10 @@ char * pgsetup_sslmode_to_string(SSLMode sslMode);
 
 bool pg_setup_standby_slot_supported(PostgresSetup *pgSetup, int logLevel);
 
+static inline uint32_t get_pg_control_version(uint32_t pg_control_version)
+{
+	return pg_control_version >= 10000 
+		? pg_control_version / 10000 : pg_control_version;
+}
 
 #endif /* PGSETUP_H */

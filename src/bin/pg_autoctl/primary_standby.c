@@ -649,7 +649,8 @@ postgres_add_default_settings(LocalPostgresServer *postgres)
 		}
 	}
 
-	if (pgSetup->control.pg_control_version < 1300)
+	log_info("######## pg_control_version = %u, %u", pgSetup->control.pg_control_version, get_pg_control_version(pgSetup->control.pg_control_version));
+	if (get_pg_control_version(pgSetup->control.pg_control_version) < 1300)
 	{
 		if (IS_CITUS_INSTANCE_KIND(postgres->pgKind))
 		{

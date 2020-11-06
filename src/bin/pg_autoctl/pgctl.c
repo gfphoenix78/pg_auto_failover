@@ -1897,6 +1897,7 @@ prepare_primary_conninfo(char *primaryConnInfo,
 	appendPQExpBuffer(buffer, " host=%s", primaryHost);
 	appendPQExpBuffer(buffer, " port=%d", primaryPort);
 	appendPQExpBuffer(buffer, " user=%s", replicationUsername);
+	appendPQExpBuffer(buffer, " options='-c gp_role=utility'");
 
 	if (dbname != NULL)
 	{

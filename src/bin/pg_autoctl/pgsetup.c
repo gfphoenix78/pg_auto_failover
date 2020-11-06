@@ -758,7 +758,7 @@ pg_setup_get_local_connection_string(PostgresSetup *pgSetup,
 		return false;
 	}
 
-	appendPQExpBuffer(connStringBuffer, "port=%d dbname=%s",
+	appendPQExpBuffer(connStringBuffer, "port=%d options='-c gp_role=utility' dbname=%s",
 					  pgSetup->pgport, pgSetup->dbname);
 
 	if (pg_regress_sock_dir_exists &&

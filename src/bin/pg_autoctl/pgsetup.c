@@ -33,9 +33,9 @@
 static bool get_pgpid(PostgresSetup *pgSetup, bool pgIsNotRunningIsOk);
 static PostmasterStatus pmStatusFromString(const char *postmasterStatus);
 
-static inline bool is_master(PostgresSetup *pgSetup)
+static inline bool is_pm_ready(PostgresSetup *pgSetup)
 {
-	return pgSetup->pidFile.port == 7000;
+	return pgSetup->pm_status == POSTMASTER_STATUS_DTMREADY || pgSetup->pm_status == POSTMASTER_STATUS_READY;
 }
 
 /*
@@ -921,9 +921,7 @@ pg_setup_is_ready(PostgresSetup *pgSetup, bool pgIsNotRunningIsOk)
 	 * ERROR Connection to database failed: FATAL: the database system is
 	 * starting up
 	 */
-	while (is_master(pgSetup)
-			? pgSetup->pm_status != POSTMASTER_STATUS_DTMREADY
-			: pgSetup->pm_status != POSTMASTER_STATUS_READY)
+	while (!is_pm_ready(pgSetup))
 	{
 		int maxRetries = 5;
 
@@ -974,7 +972,7 @@ pg_setup_is_ready(PostgresSetup *pgSetup, bool pgIsNotRunningIsOk)
 		}
 
 		/* avoid an extra wait if that's possible */
-		if (is_master(pgSetup) ? pgSetup->pm_status == POSTMASTER_STATUS_DTMREADY : pgSetup->pm_status == POSTMASTER_STATUS_READY)
+		if (is_pm_ready(pgSetup))
 		{
 			break;
 		}
@@ -991,7 +989,7 @@ pg_setup_is_ready(PostgresSetup *pgSetup, bool pgIsNotRunningIsOk)
 		log_trace("pg_setup_is_ready: %s", pmStatusToString(pgSetup->pm_status));
 	}
 
-	return is_master(pgSetup) ? pgSetup->pm_status == POSTMASTER_STATUS_DTMREADY : pgSetup->pm_status == POSTMASTER_STATUS_READY;
+	return is_pm_ready(pgSetup);
 }
 
 
@@ -1069,8 +1067,7 @@ pg_setup_wait_until_is_ready(PostgresSetup *pgSetup, int timeout, int logLevel)
 		*pgSetup = newPgSetup;
 
 		/* avoid an extra pg_setup_is_ready call if we're all good already */
-		pgIsReady = is_master(pgSetup) ? pgSetup->pm_status == POSTMASTER_STATUS_DTMREADY
-						: pgSetup->pm_status == POSTMASTER_STATUS_READY;
+		pgIsReady = is_pm_ready(pgSetup);
 	}
 
 	/*

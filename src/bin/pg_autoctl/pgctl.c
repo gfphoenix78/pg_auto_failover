@@ -859,6 +859,10 @@ pg_rewind(const char *pgdata,
 	char command[BUFSIZE];
 	int commandSize = 0;
 
+	/* bypass pg_rewind now */
+	if (pg_ctl)
+		return false;
+
 	/* call pg_rewind*/
 	path_in_same_directory(pg_ctl, "pg_rewind", pg_rewind);
 
@@ -1567,6 +1571,7 @@ static bool
 pg_write_standby_signal(const char *pgdata,
 						ReplicationSource *replicationSource)
 {
+	char standbyAutoConfFilePath[MAXPGPATH] = { 0 };
 	char standbyConfigFilePath[MAXPGPATH] = { 0 };
 	char signalFilePath[MAXPGPATH] = { 0 };
 	char configFilePath[MAXPGPATH] = { 0 };
@@ -1615,6 +1620,7 @@ pg_write_standby_signal(const char *pgdata,
 	/* set our configuration file paths, all found in PGDATA */
 	join_path_components(signalFilePath, pgdata, "standby.signal");
 	join_path_components(configFilePath, pgdata, "postgresql.conf");
+	join_path_components(standbyAutoConfFilePath, pgdata, "postgresql.auto.conf");
 	join_path_components(standbyConfigFilePath,
 						 pgdata,
 						 AUTOCTL_STANDBY_CONF_FILENAME);
@@ -1650,6 +1656,13 @@ pg_write_standby_signal(const char *pgdata,
 											 NULL,
 											 includeTuning))
 	{
+		return false;
+	}
+	if (file_exists(standbyAutoConfFilePath))
+		unlink_file(standbyAutoConfFilePath);
+	if (!duplicate_file(standbyConfigFilePath, standbyAutoConfFilePath))
+	{
+		log_error("Failed to copy recovery conf");
 		return false;
 	}
 
@@ -1897,6 +1910,7 @@ prepare_primary_conninfo(char *primaryConnInfo,
 	appendPQExpBuffer(buffer, " host=%s", primaryHost);
 	appendPQExpBuffer(buffer, " port=%d", primaryPort);
 	appendPQExpBuffer(buffer, " user=%s", replicationUsername);
+	appendPQExpBuffer(buffer, " options='-c gp_role=utility'");
 
 	if (dbname != NULL)
 	{

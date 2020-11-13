@@ -40,6 +40,16 @@ int ssl_flag = 0;
 static void stop_postgres_and_remove_pgdata_and_config(ConfigFilePaths *pathnames,
 													   PostgresSetup *pgSetup);
 
+static bool validate_gp_role(const char *role)
+{
+	assert(role);
+	bool ok = strcmp(role, "dispatch") == 0 ||
+				strcmp(role, "execute") == 0 ||
+				strcmp(role, "utility") == 0;
+	if (!ok)
+		log_error("invalid gp_role:%s", role);
+	return ok;
+}
 /*
  * cli_common_keeper_getopts parses the CLI options for the pg_autoctl create
  * postgres command, and others such as pg_autoctl do discover. An example of a
@@ -433,6 +443,29 @@ cli_common_keeper_getopts(int argc, char **argv,
 				break;
 			}
 
+			case 129:
+			{
+				/* { "gp_dbid", required_argument, NULL, 129 }, */
+				if (!stringToInt(optarg, &LocalOptionConfig.pgSetup.gp_dbid))
+				{
+					log_error("Failed to parse --gp_dbid \"%s\"", optarg);
+					errors++;
+				}
+				log_trace("--gp_dbid %d", LocalOptionConfig.pgSetup.gp_dbid);
+				break;
+			}
+			case 130:
+			{
+				/* { "gp_role", required_argument, NULL, 130 }, */
+				if (validate_gp_role(optarg))
+					strlcpy(LocalOptionConfig.pgSetup.gp_role, optarg,
+							sizeof(LocalOptionConfig.pgSetup.gp_role));
+				else
+					errors++;
+				log_trace("--gp_role %s", LocalOptionConfig.pgSetup.gp_role);
+				break;
+			}
+
 			default:
 			{
 				/* getopt_long already wrote an error message */
@@ -462,6 +495,10 @@ cli_common_keeper_getopts(int argc, char **argv,
 		/* errors have already been logged */
 		exit(EXIT_CODE_BAD_ARGS);
 	}
+	if (LocalOptionConfig.pgSetup.gp_dbid == 0)
+		LocalOptionConfig.pgSetup.gp_dbid = -1;
+	if (LocalOptionConfig.pgSetup.gp_role[0] == '\0')
+		strcpy(LocalOptionConfig.pgSetup.gp_role, "utility");
 
 	/* publish our option parsing now */
 	*options = LocalOptionConfig;

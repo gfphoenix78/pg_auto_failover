@@ -173,6 +173,8 @@ typedef struct pg_setup
 	char dbname[NAMEDATALEN];               /* dbname, defaults to PGDATABASE */
 	char pghost[_POSIX_HOST_NAME_MAX];      /* local PGHOST to connect to */
 	int pgport;                             /* PGPORT */
+	int gp_dbid;
+	char gp_role[16];						/* role in greenplum: dispatch or execute */
 	char listen_addresses[MAXPGPATH];       /* listen_addresses */
 	int proxyport;                          /* Proxy port */
 	char authMethod[NAMEDATALEN];           /* auth method, defaults to trust */

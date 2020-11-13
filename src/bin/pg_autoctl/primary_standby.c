@@ -898,7 +898,7 @@ standby_init_database(LocalPostgresServer *postgres,
 
 		if (hasReplicationSlot)
 		{
-			if (!pg_basebackup(pgSetup->pgdata, pgSetup->pg_ctl, upstream))
+			if (!pg_basebackup(pgSetup->pgdata, pgSetup->pg_ctl, upstream, pgSetup->gp_dbid))
 			{
 				return false;
 			}

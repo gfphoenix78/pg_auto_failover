@@ -92,6 +92,8 @@ CommandLine create_postgres_command =
 		"  --listen          PostgreSQL's listen_addresses\n"
 		"  --username        PostgreSQL's username\n"
 		"  --dbname          PostgreSQL's database name\n"
+		"  --gp_dbid         Instance ID in Greenplum\n"
+		"  --gp_role         Role name of the instance in Greenplum\n"
 		"  --name            pg_auto_failover node name\n"
 		"  --hostname        hostname used to connect from the other nodes\n"
 		"  --formation       pg_auto_failover formation\n"
@@ -280,6 +282,8 @@ cli_create_postgres_getopts(int argc, char **argv)
 		{ "auth", required_argument, NULL, 'A' },
 		{ "skip-pg-hba", no_argument, NULL, 'S' },
 		{ "dbname", required_argument, NULL, 'd' },
+		{ "gp_dbid", required_argument, NULL, 129 },
+		{ "gp_role", required_argument, NULL, 130 },
 		{ "name", required_argument, NULL, 'a' },
 		{ "hostname", required_argument, NULL, 'n' },
 		{ "formation", required_argument, NULL, 'f' },
@@ -356,6 +360,16 @@ cli_create_postgres(int argc, char **argv)
 	cli_create_pg(&keeper);
 }
 
+static bool validate_gp_role(const char *role)
+{
+	assert(role);
+	bool ok = strcmp(role, "dispatch") == 0 ||
+				strcmp(role, "execute") == 0 ||
+				strcmp(role, "utility") == 0;
+	if (!ok)
+		log_error("invalid gp_role:%s", role);
+	return ok;
+}
 
 /*
  * cli_create_monitor_getopts parses the command line options necessary to
@@ -376,6 +390,8 @@ cli_create_monitor_getopts(int argc, char **argv)
 		{ "hostname", required_argument, NULL, 'n' },
 		{ "listen", required_argument, NULL, 'l' },
 		{ "auth", required_argument, NULL, 'A' },
+		{ "gp_dbid", required_argument, NULL, 129 },
+		{ "gp_role", required_argument, NULL, 130 },
 		{ "skip-pg-hba", no_argument, NULL, 'S' },
 		{ "version", no_argument, NULL, 'V' },
 		{ "verbose", no_argument, NULL, 'v' },
@@ -586,6 +602,28 @@ cli_create_monitor_getopts(int argc, char **argv)
 				}
 				break;
 			}
+			case 129:
+			{
+				/* { "gp_dbid", required_argument, NULL, 129 }, */
+				if (!stringToInt(optarg, &options.pgSetup.gp_dbid))
+				{
+					log_error("Failed to parse --gp_dbid \"%s\"", optarg);
+					errors++;
+				}
+				log_trace("--gp_dbid %d", options.pgSetup.gp_dbid);
+				break;
+			}
+			case 130:
+			{
+				/* { "gp_role", required_argument, NULL, 130 }, */
+				if (validate_gp_role(optarg))
+					strlcpy(options.pgSetup.gp_role, optarg,
+							sizeof(options.pgSetup.gp_role));
+				else
+					errors++;
+				log_trace("--gp_role %s", optarg);
+				break;
+			}
 
 			default:
 			{
@@ -735,6 +773,11 @@ cli_create_monitor_config(Monitor *monitor, MonitorConfig *config)
 			 */
 			(void) check_hostname(config->hostname);
 		}
+
+		if (IS_EMPTY_STRING_BUFFER(config->pgSetup.gp_role))
+			strcpy(config->pgSetup.gp_role, "utility");
+		if (config->pgSetup.gp_dbid == 0)
+			config->pgSetup.gp_dbid = -1;
 
 		/* set our MonitorConfig from the command line options now. */
 		(void) monitor_config_init(config,

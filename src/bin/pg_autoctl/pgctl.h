@@ -41,14 +41,15 @@ bool pg_auto_failover_default_settings_file_exists(PostgresSetup *pgSetup);
 
 bool pg_basebackup(const char *pgdata,
 				   const char *pg_ctl,
-				   ReplicationSource *replicationSource);
+				   ReplicationSource *replicationSource,
+				   int gp_dbid);
 bool pg_rewind(const char *pgdata,
 			   const char *pg_ctl,
 			   ReplicationSource *replicationSource);
 
 bool pg_ctl_initdb(const char *pg_ctl, const char *pgdata);
 bool pg_ctl_postgres(const char *pg_ctl, const char *pgdata, int pgport,
-					 char *listen_addresses);
+					 char *listen_addresses, const char *gp_role);
 bool pg_log_startup(const char *pgdata, int logLevel);
 bool pg_log_recovery_setup(const char *pgdata, int logLevel);
 bool pg_ctl_stop(const char *pg_ctl, const char *pgdata);

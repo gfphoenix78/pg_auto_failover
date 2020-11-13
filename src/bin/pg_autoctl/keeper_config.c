@@ -98,6 +98,14 @@
 	make_strbuf_option("postgresql", "auth_method", "auth", \
 					   false, MAXPGPATH, config->pgSetup.authMethod)
 
+#define OPTION_POSTGRESQL_GP_ROLE(config) \
+	make_strbuf_option("postgresql", "gp_role", "gp_role", \
+					   true, 16, config->pgSetup.gp_role)
+
+#define OPTION_POSTGRESQL_GP_DBID(config) \
+	make_int_option("postgresql", "gp_dbid", "gp_dbid", \
+					true, &config->pgSetup.gp_dbid)
+
 #define OPTION_SSL_ACTIVE(config) \
 	make_int_option_default("ssl", "active", NULL, \
 							false, &(config->pgSetup.ssl.active), 0)
@@ -190,6 +198,8 @@
 		OPTION_POSTGRESQL_PROXY_PORT(config), \
 		OPTION_POSTGRESQL_LISTEN_ADDRESSES(config), \
 		OPTION_POSTGRESQL_AUTH_METHOD(config), \
+		OPTION_POSTGRESQL_GP_ROLE(config), \
+		OPTION_POSTGRESQL_GP_DBID(config), \
 		OPTION_SSL_ACTIVE(config), \
 		OPTION_SSL_MODE(config), \
 		OPTION_SSL_CA_FILE(config), \

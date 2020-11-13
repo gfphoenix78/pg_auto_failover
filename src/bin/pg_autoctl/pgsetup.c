@@ -336,6 +336,10 @@ pg_setup_init(PostgresSetup *pgSetup,
 				options->authMethod, NAMEDATALEN);
 	}
 
+	/* greenplum specific settings */
+	pgSetup->gp_dbid = options->gp_dbid;
+	strlcpy(pgSetup->gp_role, options->gp_role, sizeof(options->gp_role));
+
 	pgSetup->settings = options->settings;
 
 	/*

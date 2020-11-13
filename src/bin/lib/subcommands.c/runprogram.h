@@ -585,7 +585,7 @@ waitprogram(Program *prog, pid_t childPid)
 	if (WIFSIGNALED(status))
 	{
 		int signo = WTERMSIG(status);
-		log_info("child %lld was terminated by signal %d", (long)childPid, signo);
+		log_info("child %ld was terminated by signal %d", (long)childPid, signo);
 		prog->returnCode = signo ? signo : -1;
 	}
 	else if (WIFEXITED(status))

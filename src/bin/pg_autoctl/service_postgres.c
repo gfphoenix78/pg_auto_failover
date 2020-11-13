@@ -64,11 +64,13 @@ service_postgres_start(void *context, pid_t *pid)
 
 			log_trace("service_postgres_start: EXEC postgres");
 
+			log_info("start postgres, gp_role=%s", pgSetup->gp_role);
 			/* execv() the postgres binary directly, as a sub-process */
 			(void) pg_ctl_postgres(pgSetup->pg_ctl,
 								   pgSetup->pgdata,
 								   pgSetup->pgport,
-								   pgSetup->listen_addresses);
+								   pgSetup->listen_addresses,
+								   pgSetup->gp_role);
 
 			/* unexpected */
 			log_fatal("BUG: returned from service_keeper_runprogram()");

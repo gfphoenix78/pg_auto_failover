@@ -715,7 +715,8 @@ prepare_guc_settings_from_pgsetup(const char *configFilePath,
 bool
 pg_basebackup(const char *pgdata,
 			  const char *pg_ctl,
-			  ReplicationSource *replicationSource)
+			  ReplicationSource *replicationSource,
+			  int gp_dbid)
 {
 	int returnCode;
 	Program program;
@@ -724,11 +725,13 @@ pg_basebackup(const char *pgdata,
 	NodeAddress *primaryNode = &(replicationSource->primaryNode);
 	char primaryConnInfo[MAXCONNINFO] = { 0 };
 
-	char *args[16];
+	char *args[18];
 	int argsIndex = 0;
 
 	char command[BUFSIZE];
 	int commandSize = 0;
+
+	char gp_dbid_buf[16];
 
 	log_debug("mkdir -p \"%s\"", replicationSource->backupDir);
 	if (!ensure_empty_dir(replicationSource->backupDir, 0700))
@@ -778,7 +781,10 @@ pg_basebackup(const char *pgdata,
 	args[argsIndex++] = "--wal-method=stream";
 	args[argsIndex++] = "--slot";
 	args[argsIndex++] = replicationSource->slotName;
+	args[argsIndex++] = "--target-gp-dbid";
+	args[argsIndex++] = gp_dbid_buf;
 	args[argsIndex] = NULL;
+	snprintf(gp_dbid_buf, sizeof(gp_dbid_buf), "%d", gp_dbid);
 
 	/*
 	 * We do not want to call setsid() when running this program, as the
@@ -1020,20 +1026,21 @@ pg_ctl_initdb(const char *pg_ctl, const char *pgdata)
  */
 bool
 pg_ctl_postgres(const char *pg_ctl, const char *pgdata, int pgport,
-				char *listen_addresses)
+				char *listen_addresses, const char *gp_role)
 {
 	Program program;
 	char postgres[MAXPGPATH];
 	char logfile[MAXPGPATH];
 	int logFileDescriptor = -1;
 
-	char *args[12];
+	char *args[14];
 	int argsIndex = 0;
 
 	char env_pg_regress_sock_dir[MAXPGPATH];
 
 	char command[BUFSIZE];
 	int commandSize = 0;
+	char gp_role_buf[32];
 
 	/* call postgres directly */
 	path_in_same_directory(pg_ctl, "postgres", postgres);
@@ -1046,6 +1053,12 @@ pg_ctl_postgres(const char *pg_ctl, const char *pgdata, int pgport,
 	args[argsIndex++] = (char *) pgdata;
 	args[argsIndex++] = "-p";
 	args[argsIndex++] = (char *) intToString(pgport).strValue;
+	if (gp_role && strcmp(gp_role, "utility") != 0)
+	{
+		args[argsIndex++] = "-c";
+		args[argsIndex++] = (char *) gp_role_buf;
+		snprintf(gp_role_buf, sizeof(gp_role_buf), "gp_role=%s", gp_role);
+	}
 
 	if (!IS_EMPTY_STRING_BUFFER(listen_addresses))
 	{

@@ -1543,12 +1543,12 @@ pmStatusToString(PostmasterStatus pm_status)
 
 		case POSTMASTER_STATUS_READY:
 		{
-			return PM_STATUS_READY;
+			return "ready";
 		}
 
 		case POSTMASTER_STATUS_DTMREADY:
 		{
-			return PM_STATUS_DTM_RECOVERED;
+			return "dtmready";
 		}
 
 		case POSTMASTER_STATUS_STANDBY:

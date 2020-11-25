@@ -72,7 +72,8 @@ class Cluster:
                         listen_flag=False, role=Role.Postgres,
                         formation=None, authMethod=None,
                         sslMode=None, sslSelfSigned=False,
-                        sslCAFile=None, sslServerKey=None, sslServerCert=None):
+                        sslCAFile=None, sslServerKey=None, sslServerCert=None,
+                        gp_dbid=-1, gp_role='dispatch'):
         """
         Initializes a data node and returns an instance of DataNode. This will
         do the "keeper init" and "pg_autoctl run" commands.
@@ -88,7 +89,8 @@ class Cluster:
                             sslSelfSigned=sslSelfSigned,
                             sslCAFile=sslCAFile,
                             sslServerKey=sslServerKey,
-                            sslServerCert=sslServerCert)
+                            sslServerCert=sslServerCert,
+                            gp_dbid=gp_dbid, gp_role=gp_role)
         self.datanodes.append(datanode)
         return datanode
 
@@ -307,6 +309,7 @@ class PGNode:
             "alter user %s with password \'%s\'" % (username, password)
         passwd_command = [shutil.which('psql'),
                           '-d', self.database,
+                          '-p', str(self.port),
                           '-c', alter_user_set_passwd_command]
         self.vnode.run_and_wait(passwd_command, name="user passwd")
         self.authenticatedUsers[username] = password
@@ -399,7 +402,8 @@ class PGNode:
         """
         command = PGAutoCtl(self)
         out, err, ret = command.execute("pgsetup ready",
-                                        'do', 'pgsetup', 'wait', '-vvv')
+                                        'do', 'pgsetup', 'wait', '-vvv',
+                                        '--pgport', str(self.port))
 
         return ret == 0
 
@@ -707,7 +711,8 @@ class DataNode(PGNode):
                  username, authMethod, database, monitor,
                  nodeid, group, listen_flag, role, formation,
                  sslMode=None, sslSelfSigned=False,
-                 sslCAFile=None, sslServerKey=None, sslServerCert=None):
+                 sslCAFile=None, sslServerKey=None, sslServerCert=None,
+                 gp_dbid=-1, gp_role='utility'):
         super().__init__(cluster, datadir, vnode, port,
                          username, authMethod, database, role,
                          sslMode=sslMode,
@@ -720,6 +725,8 @@ class DataNode(PGNode):
         self.group = group
         self.listen_flag = listen_flag
         self.formation = formation
+        self.gp_dbid = gp_dbid
+        self.gp_role = gp_role
 
     def create(self, run=False, level='-v', name=None, host=None, port=None,
                candidatePriority=None, replicationQuorum=None):
@@ -744,6 +751,8 @@ class DataNode(PGNode):
                        '--pgctl', shutil.which('pg_ctl'),
                        '--auth', self.authMethod,
                        '--monitor', self.monitor.connection_string()]
+        if self.gp_dbid != -1:
+            create_args += ['--gp_dbid', str(self.gp_dbid), '--gp_role', self.gp_role]
 
         if self.sslMode:
             create_args += ['--ssl-mode', self.sslMode]
@@ -1310,6 +1319,7 @@ class MonitorNode(PGNode):
             (formation, group)
         failover_command = [shutil.which('psql'),
                             '-d', self.database,
+                            '-p', str(self.port),
                             '-c', failover_commmand_text]
         self.vnode.run_and_wait(failover_command, name="manual failover")
 

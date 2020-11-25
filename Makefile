@@ -23,6 +23,9 @@ else
 	TEST_ARGUMENT = $(TEST:%=tests/%.py)
 endif
 
+TEST_ARGUMENT += --exclude='test_debian_clusters' --exclude='_skip_pg_hba' --exclude='_ssl'
+#TEST_ARGUMENT += --tests='test_auth' --debug-log='/tmp/debug.log' 
+TEST_ARGUMENT += --tests='test_auth,test_basic_operation_listen_flag' --debug-log='/tmp/debug.log' 
 PG_AUTOCTL = PG_AUTOCTL_DEBUG=1 ./src/bin/pg_autoctl/pg_autoctl
 
 NODES ?= 2
@@ -61,7 +64,7 @@ install-bin: bin
 	$(MAKE) -C src/bin/ install
 
 test:
-	sudo -E env "PATH=${PATH}" USER=$(shell whoami) \
+	sudo -E env "PATH=${PATH}" LD_LIBRARY_PATH=${LD_LIBRARY_PATH} USER=$(shell whoami) \
 		$(NOSETESTS)			\
 		--verbose				\
 		--nocapture				\

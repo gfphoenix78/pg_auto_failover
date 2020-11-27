@@ -14,7 +14,7 @@ def setup_module():
     init_greenplum_env(cluster)
 
 def teardown_module():
-    destroy_gp_segments
+    destroy_gp_segments()
     cluster.destroy()
 
 def test_000_create_monitor():
@@ -27,7 +27,8 @@ def test_000_create_monitor():
 def test_001_init_primary():
     global node1
     config_master(cluster, '/tmp/auth/node1', 7000)
-    node1 = cluster.create_datanode("/tmp/auth/node1", authMethod="md5", port=7000, gp_dbid=1)
+    node1 = cluster.create_datanode("/tmp/auth/node1", authMethod="md5")
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     node1.create()
     node1.config_set("replication.password", "streaming_password")
     node1.run()
@@ -46,7 +47,8 @@ def test_002_create_t1():
 
 def test_003_init_secondary():
     global node2
-    node2 = cluster.create_datanode("/tmp/auth/node2", authMethod="md5", port=7001, gp_dbid=8)
+    node2 = cluster.create_datanode("/tmp/auth/node2", authMethod="md5")
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
 
     os.putenv('PGPASSWORD', "streaming_password")
     node2.create()

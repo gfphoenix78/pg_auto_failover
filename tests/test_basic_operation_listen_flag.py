@@ -24,7 +24,8 @@ def test_000_create_monitor():
 def test_001_init_primary():
     global node1
     config_master(cluster, '/tmp/listen/node1', 7000)
-    node1 = cluster.create_datanode("/tmp/listen/node1", listen_flag=True, port=7000, gp_dbid=1)
+    node1 = cluster.create_datanode("/tmp/listen/node1", listen_flag=True)
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     node1.create()
     node1.run()
     assert node1.wait_until_state(target_state="single")
@@ -38,10 +39,11 @@ def test_002_create_t1():
 
 def test_003_init_secondary():
     global node2
-    node2 = cluster.create_datanode("/tmp/listen/node2", listen_flag=True, port=7001, gp_dbid=8)
+    node2 = cluster.create_datanode("/tmp/listen/node2", listen_flag=True)
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
     node2.create()
     node2.run()
-    config_standby(node1, '/tmp/listen/node2', node2ip(node2), node2.port, node2.gp_dbid)
+    config_standby(node1, node2)
     assert node2.wait_until_state(target_state="secondary")
     assert node1.wait_until_state(target_state="primary")
 

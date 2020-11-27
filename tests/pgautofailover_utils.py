@@ -72,8 +72,7 @@ class Cluster:
                         listen_flag=False, role=Role.Postgres,
                         formation=None, authMethod=None,
                         sslMode=None, sslSelfSigned=False,
-                        sslCAFile=None, sslServerKey=None, sslServerCert=None,
-                        gp_dbid=-1, gp_role='dispatch'):
+                        sslCAFile=None, sslServerKey=None, sslServerCert=None):
         """
         Initializes a data node and returns an instance of DataNode. This will
         do the "keeper init" and "pg_autoctl run" commands.
@@ -89,8 +88,7 @@ class Cluster:
                             sslSelfSigned=sslSelfSigned,
                             sslCAFile=sslCAFile,
                             sslServerKey=sslServerKey,
-                            sslServerCert=sslServerCert,
-                            gp_dbid=gp_dbid, gp_role=gp_role)
+                            sslServerCert=sslServerCert)
         self.datanodes.append(datanode)
         return datanode
 
@@ -711,8 +709,7 @@ class DataNode(PGNode):
                  username, authMethod, database, monitor,
                  nodeid, group, listen_flag, role, formation,
                  sslMode=None, sslSelfSigned=False,
-                 sslCAFile=None, sslServerKey=None, sslServerCert=None,
-                 gp_dbid=-1, gp_role='utility'):
+                 sslCAFile=None, sslServerKey=None, sslServerCert=None):
         super().__init__(cluster, datadir, vnode, port,
                          username, authMethod, database, role,
                          sslMode=sslMode,
@@ -725,7 +722,12 @@ class DataNode(PGNode):
         self.group = group
         self.listen_flag = listen_flag
         self.formation = formation
+        self.gp_dbid = -1
+        self.gp_role = 'utility'
+
+    def set_gp_params(self, gp_dbid, port, gp_role='dispatch'):
         self.gp_dbid = gp_dbid
+        self.port    = port
         self.gp_role = gp_role
 
     def create(self, run=False, level='-v', name=None, host=None, port=None,

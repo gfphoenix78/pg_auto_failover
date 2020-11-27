@@ -102,10 +102,10 @@ def config_master(cluster, datadir, port):
     rc = subprocess.run(['su', user, '-c', ' '.join(cmd)])
     assert rc.returncode == 0
 
-def config_standby(primary_node, datadir, addr, port, dbid):
+def config_standby(primary_node, standby_node):
     ops = set_utility(True)
     os.environ['PGOPTIONS'] = '-c gp_role=utility -c allow_system_table_mods=on'
-    sql = standby_gp_segment_configuration(datadir, addr, port, dbid)
+    sql = standby_gp_segment_configuration(standby_node.datadir, node2ip(standby_node), standby_node.port, standby_node.gp_dbid)
     primary_node.run_sql_query(sql)
     restore_utility(ops)
 

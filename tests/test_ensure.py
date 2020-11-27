@@ -1,5 +1,6 @@
 import pgautofailover_utils as pgautofailover
 from nose.tools import *
+from gp import *
 
 import time
 import os.path
@@ -11,18 +12,23 @@ node2 = None
 def setup_module():
     global cluster
     cluster = pgautofailover.Cluster()
+    init_greenplum_env(cluster)
 
 def teardown_module():
+    destroy_gp_segments()
     cluster.destroy()
 
 def test_000_create_monitor():
     monitor = cluster.create_monitor("/tmp/ensure/monitor")
+    config_monitor(monitor)
     monitor.run()
     monitor.wait_until_pg_is_running()
 
 def test_001_init_primary():
     global node1
+    config_master(cluster, '/tmp/ensure/node1', 7000)
     node1 = cluster.create_datanode("/tmp/ensure/node1")
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     print()
     print("create node1")
     node1.create()
@@ -41,7 +47,9 @@ def test_002_create_t1():
 def test_003_init_secondary():
     global node2
     node2 = cluster.create_datanode("/tmp/ensure/node2")
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
     node2.create()
+    config_standby(node1, node2)
     node2.stop_postgres()
     node2.run()
     assert node2.wait_until_state(target_state="secondary")

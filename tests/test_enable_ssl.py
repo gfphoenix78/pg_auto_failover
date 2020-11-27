@@ -2,6 +2,8 @@ import pgautofailover_utils as pgautofailover
 import ssl_cert_utils as cert
 import subprocess
 import os
+from gp import *
+import unittest
 
 cluster = None
 monitor = None
@@ -11,28 +13,33 @@ node2 = None
 def setup_module():
     global cluster
     cluster = pgautofailover.Cluster()
+    init_greenplum_env(cluster)
 
 def teardown_module():
+    destroy_gp_segments()
     cluster.destroy()
 
+    print('HOME:', os.getenv('HOME'))
+    print('USER:', os.getenv('USER'))
     # remove client side setup for certificates too
-    client_top_directory = os.path.join(os.getenv("HOME"), ".postgresql")
-
-    p = subprocess.Popen(["sudo", "-E", '-u', os.getenv("USER"),
-                          'env', 'PATH=' + os.getenv("PATH"),
-                          "rm", "-rf", client_top_directory])
-    assert(p.wait() == 0)
-
-    # also remove certificates we created for the servers
-    p = subprocess.run(["sudo", "-E", '-u', os.getenv("USER"),
-                        'env', 'PATH=' + os.getenv("PATH"),
-                        "rm", "-rf", "/tmp/certs"])
-    assert(p.returncode == 0)
+#    client_top_directory = os.path.join(os.getenv("HOME"), ".postgresql")
+#
+#    p = subprocess.Popen(["sudo", "-E", '-u', os.getenv("USER"),
+#                          'env', 'PATH=' + os.getenv("PATH"),
+#                          "rm", "-rf", client_top_directory])
+#    assert(p.wait() == 0)
+#
+#    # also remove certificates we created for the servers
+#    p = subprocess.run(["sudo", "-E", '-u', os.getenv("USER"),
+#                        'env', 'PATH=' + os.getenv("PATH"),
+#                        "rm", "-rf", "/tmp/certs"])
+#    assert(p.returncode == 0)
 
 
 def test_000_create_monitor():
     global monitor
     monitor = cluster.create_monitor("/tmp/enable/monitor")
+    config_monitor(monitor)
     monitor.run()
     monitor.wait_until_pg_is_running()
 
@@ -40,7 +47,9 @@ def test_000_create_monitor():
 
 def test_001_init_primary():
     global node1
+    config_master(cluster, '/tmp/enable/node1', 7000)
     node1 = cluster.create_datanode("/tmp/enable/node1")
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     node1.create()
     node1.run()
     assert node1.wait_until_state(target_state="single")
@@ -49,14 +58,18 @@ def test_001_init_primary():
     node1.check_ssl("off", "prefer", primary=True)
 
 def test_002_create_t1():
+    ops = set_utility(False)
     node1.run_sql_query("CREATE TABLE t1(a int)")
     node1.run_sql_query("INSERT INTO t1 VALUES (1), (2)")
+    restore_utility(ops)
 
 def test_003_init_secondary():
     global node2
     node2 = cluster.create_datanode("/tmp/enable/node2")
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
     node2.create()
     node2.run()
+    config_standby(node1, node2)
 
     assert node2.wait_until_state(target_state="secondary")
     assert node1.wait_until_state(target_state="primary")

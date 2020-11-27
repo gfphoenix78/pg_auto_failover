@@ -1,6 +1,7 @@
 import pgautofailover_utils as pgautofailover
 import ssl_cert_utils as cert
 from nose.tools import *
+from gp import *
 
 import subprocess
 import os, os.path, time, shutil
@@ -9,17 +10,23 @@ cluster = None
 node1 = None
 node2 = None
 
+print('USER:', os.getenv('USER'))
+print('HOME:', os.getenv('HOME'))
 def setup_module():
     global cluster
     cluster = pgautofailover.Cluster()
+    init_greenplum_env(cluster)
 
     client_top_directory = os.path.join(os.getenv("HOME"), ".postgresql")
+    print('USER:', os.getenv('USER'))
+    print('client top directory:', client_top_directory)
 
     cluster.create_root_cert(client_top_directory,
                              basename = "root",
                              CN = "/CN=root.pgautofailover.ca")
 
 def teardown_module():
+    destroy_gp_segments()
     cluster.destroy()
 
     # remove client side setup for certificates too
@@ -90,6 +97,7 @@ def test_000_create_monitor():
                                      sslCAFile=cluster.cert.crt,
                                      sslServerKey=serverCert.key,
                                      sslServerCert=serverCert.crt)
+    config_monitor(monitor)
     monitor.run()
     monitor.wait_until_pg_is_running()
 
@@ -128,12 +136,14 @@ def test_001_init_primary():
     serverCert.create_signed_certificate(cluster.cert)
 
     # Now create the server with the certificates
+    config_master(cluster, '/tmp/cert/node1', 7000)
     node1 = cluster.create_datanode("/tmp/cert/node1",
                                     authMethod="skip",
                                     sslMode="verify-ca",
                                     sslCAFile=cluster.cert.crt,
                                     sslServerKey=serverCert.key,
                                     sslServerCert=serverCert.crt)
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     node1.create(level='-vv')
 
     with open(os.path.join("/tmp/cert/node1", "pg_hba.conf"), 'a') as hba:
@@ -158,8 +168,10 @@ def test_001_init_primary():
 def test_002_create_t1():
     print()
     print(node1.connection_string())
+    ops = set_utility(False)
     node1.run_sql_query("CREATE TABLE t1(a int)")
     node1.run_sql_query("INSERT INTO t1 VALUES (1), (2)")
+    restore_utility(ops)
 
 def test_003_init_secondary():
     global node2
@@ -178,7 +190,9 @@ def test_003_init_secondary():
                                     sslCAFile=cluster.cert.crt,
                                     sslServerKey=serverCert.key,
                                     sslServerCert=serverCert.crt)
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
     node2.create(level='-vv')
+    config_standby(node1, node2)
 
     with open(os.path.join("/tmp/cert/node2", "pg_hba.conf"), 'a') as hba:
         hba.write("hostssl all all %s cert\n" % cluster.networkSubnet)

@@ -3,19 +3,23 @@ import time
 
 import pgautofailover_utils as pgautofailover
 from nose.tools import eq_
+from gp import *
 
 cluster = None
 
 def setup_module():
     global cluster
     cluster = pgautofailover.Cluster()
+    init_greenplum_env(cluster)
 
 def teardown_module():
+    destroy_gp_segments()
     cluster.monitor.stop_pg_autoctl()
     cluster.destroy()
 
 def test_000_create_monitor():
     monitor = cluster.create_monitor("/tmp/update/monitor")
+    config_monitor(monitor)
 
 def test_001_update_extension():
     os.environ["PG_AUTOCTL_DEBUG"] = '1'

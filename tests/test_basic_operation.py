@@ -1,5 +1,7 @@
 import pgautofailover_utils as pgautofailover
 from nose.tools import raises, eq_
+from gp import *
+import unittest
 
 import time
 
@@ -12,18 +14,23 @@ node3 = None
 def setup_module():
     global cluster
     cluster = pgautofailover.Cluster()
+    init_greenplum_env(cluster)
 
 def teardown_module():
+    destroy_gp_segments()
     cluster.destroy()
 
 def test_000_create_monitor():
     global monitor
     monitor = cluster.create_monitor("/tmp/basic/monitor")
+    config_monitor(monitor)
     monitor.run()
 
 def test_001_init_primary():
     global node1
+    config_master(cluster, '/tmp/basic/node1', 7000)
     node1 = cluster.create_datanode("/tmp/basic/node1")
+    node1.set_gp_params(gp_dbid = 1, port = 7000)
     node1.create()
 
     # the name of the node should be "%s_%d" % ("node", node1.nodeid)
@@ -48,12 +55,16 @@ def test_002_stop_postgres():
     assert node1.wait_until_pg_is_running()
 
 def test_003_create_t1():
+    ops = set_utility(False)
     node1.run_sql_query("CREATE TABLE t1(a int)")
     node1.run_sql_query("INSERT INTO t1 VALUES (1), (2)")
+    restore_utility(ops)
 
 def test_004_init_secondary():
     global node2
     node2 = cluster.create_datanode("/tmp/basic/node2")
+    node2.set_gp_params(gp_dbid = 8, port = 7001)
+    config_standby(node1, node2)
 
     # register the node on the monitor with a first name for tests
     node2.create(name="node_b")
@@ -69,6 +80,7 @@ def test_004_init_secondary():
     assert node1.has_needed_replication_slots()
     assert node2.has_needed_replication_slots()
 
+@unittest.skip("read from standby")
 def test_005_read_from_secondary():
     results = node2.run_sql_query("SELECT * FROM t1")
     assert results == [(1,), (2,)]
@@ -103,7 +115,9 @@ def test_008_maintenance_secondary():
     node1.enable_maintenance()
     assert node1.wait_until_state(target_state="maintenance")
     node1.stop_postgres()
+    ops = set_utility(False)
     node2.run_sql_query("INSERT INTO t1 VALUES (3)")
+    restore_utility(ops)
 
     print("Disabling maintenance on node2")
     node1.disable_maintenance()
@@ -125,8 +139,10 @@ def test_010_fail_primary():
     assert node2.wait_until_state(target_state="wait_primary")
 
 def test_011_writes_to_node2_succeed():
+    ops = set_utility(False)
     node2.run_sql_query("INSERT INTO t1 VALUES (4)")
     results = node2.run_sql_query("SELECT * FROM t1 ORDER BY a")
+    restore_utility(ops)
     assert results == [(1,), (2,), (3,), (4,)]
 
 def test_012_start_node1_again():
@@ -134,6 +150,7 @@ def test_012_start_node1_again():
     assert node2.wait_until_state(target_state="primary")
     assert node1.wait_until_state(target_state="secondary")
 
+@unittest.skip("read from standby")
 def test_013_read_from_new_secondary():
     results = node1.run_sql_query("SELECT * FROM t1 ORDER BY a")
     assert results == [(1,), (2,), (3,), (4,)]
@@ -159,6 +176,7 @@ def test_016_drop_secondary():
 def test_017_add_new_secondary():
     global node3
     node3 = cluster.create_datanode("/tmp/basic/node3")
+    node3.set_gp_params(gp_dbid = 9, port=7009)
     node3.create()
 
 @raises(Exception)

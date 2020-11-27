@@ -24,8 +24,9 @@ else
 endif
 
 TEST_ARGUMENT += --exclude='test_debian_clusters' --exclude='_skip_pg_hba' --exclude='_ssl'
-#TEST_ARGUMENT += --tests='test_auth' --debug-log='/tmp/debug.log' 
-TEST_ARGUMENT += --tests='test_auth,test_basic_operation_listen_flag' --debug-log='/tmp/debug.log' 
+#TEST_ARGUMENT += --tests='test_ssl_self_signed'
+#TEST_ARGUMENT += --tests='test_basic_operation' --debug-log='/tmp/debug.log' 
+TEST_ARGUMENT += --tests='test_auth,test_basic_operation_listen_flag,test_create_run,test_enable_ssl,test_ssl_self_signed' --debug-log='/tmp/debug.log' 
 PG_AUTOCTL = PG_AUTOCTL_DEBUG=1 ./src/bin/pg_autoctl/pg_autoctl
 
 NODES ?= 2

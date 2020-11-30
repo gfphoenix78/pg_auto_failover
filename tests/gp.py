@@ -41,7 +41,6 @@ def standby_gp_segment_configuration(datadir, addr, port, dbid):
 
 def insert_gp_segment_configuartion(node_addrs, mdatadir, maddr, mport):
     datadirs = datadirs_for_segments()
-    hostname = os.environ['HOSTNAME']
     hostname = '172.27.1.1'
     datadirs = '/home/gpadmin/datadirs'
     sql = 'delete from gp_segment_configuration;\ninsert into gp_segment_configuration values'

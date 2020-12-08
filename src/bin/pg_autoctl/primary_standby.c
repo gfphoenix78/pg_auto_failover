@@ -699,6 +699,7 @@ primary_create_user_with_hba(LocalPostgresServer *postgres, char *userName,
 	bool login = true;
 	bool superuser = false;
 	bool replication = false;
+	bool useSSL = postgres->postgresSetup.ssl.active;
 	char hbaFilePath[MAXPGPATH];
 
 	log_trace("primary_create_user_with_hba");
@@ -718,8 +719,10 @@ primary_create_user_with_hba(LocalPostgresServer *postgres, char *userName,
 		return false;
 	}
 
+	if (useSSL)
+		useSSL = strcmp(userName, PG_AUTOCTL_HEALTH_USERNAME) != 0;
 	if (!pghba_ensure_host_rule_exists(hbaFilePath,
-									   postgres->postgresSetup.ssl.active,
+									   useSSL,
 									   HBA_DATABASE_ALL,
 									   NULL,
 									   userName,

@@ -1554,7 +1554,7 @@ pg_ensure_monitor_hba(Keeper *keeper)
 	{
 		/* developer error, this should never happen */
 		log_fatal("BUG: monitor_pguri should be validated before calling "
-				__func__);
+				"pg_ensure_monitor_hba");
 		return false;
 	}
 	if (!SKIP_HBA(authMethod))
@@ -1570,7 +1570,7 @@ pg_ensure_monitor_hba(Keeper *keeper)
 	}
 
 	if (!pghba_ensure_host_rule_exists(hbaFilePath,
-									   pgSetup->ssl.active,
+									   false, /* health check doesn't use SSL */
 									   HBA_DATABASE_ALL,
 									   NULL,
 									   PG_AUTOCTL_HEALTH_USERNAME,

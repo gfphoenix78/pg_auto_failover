@@ -33,6 +33,31 @@ Semaphore log_semaphore;        /* allows inter-process locking */
 static void set_logger(void);
 static void log_semaphore_unlink_atexit(void);
 
+static void
+run_background()
+{
+	long pid;
+	fflush(stdout);
+	fflush(stderr);
+	pid = fork();
+	if (pid < 0)
+	{
+		log_info("fork failed");
+	} else if (pid > 0) {
+		printf("child pid = %ld\n", pid);
+		exit(0);
+	} else {
+		int fd = open("/dev/null", O_RDWR);
+		if (fd < 0)
+		{
+			_exit(1);
+		}
+		dup2(fd, 0);
+		dup2(fd, 1);
+		dup2(fd, 2);
+		close(fd);
+	}
+}
 
 /*
  * Main entry point for the binary.
@@ -42,6 +67,11 @@ main(int argc, char **argv)
 {
 	CommandLine command = root;
 
+	if (env_exists("PGAUTOCTL_DAEMON"))
+	{
+		unsetenv("PGAUTOCTL_DAEMON");
+		run_background();
+	}
 	/* allows changing process title in ps/top/ptree etc */
 	(void) init_ps_buffer(argc, argv);
 

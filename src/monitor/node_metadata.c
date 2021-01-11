@@ -119,6 +119,8 @@ TupleToAutoFailoverNode(TupleDesc tupleDescriptor, HeapTuple heapTuple)
 								 tupleDescriptor, &isNull);
 	Datum nodeName = heap_getattr(heapTuple, Anum_pgautofailover_node_nodename,
 								  tupleDescriptor, &isNull);
+	Datum pgdata = heap_getattr(heapTuple, Anum_pgautofailover_node_pgdata,
+								  tupleDescriptor, &isNull);
 	Datum nodeHost = heap_getattr(heapTuple, Anum_pgautofailover_node_nodehost,
 								  tupleDescriptor, &isNull);
 	Datum nodePort = heap_getattr(heapTuple, Anum_pgautofailover_node_nodeport,
@@ -182,6 +184,7 @@ TupleToAutoFailoverNode(TupleDesc tupleDescriptor, HeapTuple heapTuple)
 	pgAutoFailoverNode->reportedLSN = DatumGetLSN(reportedLSN);
 	pgAutoFailoverNode->candidatePriority = DatumGetInt32(candidatePriority);
 	pgAutoFailoverNode->replicationQuorum = DatumGetBool(replicationQuorum);
+	pgAutoFailoverNode->pgdata = TextDatumGetCString(pgdata);
 
 	return pgAutoFailoverNode;
 }
@@ -933,6 +936,7 @@ AddAutoFailoverNode(char *formationId,
 					char *nodeName,
 					char *nodeHost,
 					int nodePort,
+					char *pgdata,
 					uint64 sysIdentifier,
 					ReplicationState goalState,
 					ReplicationState reportedState,
@@ -959,7 +963,8 @@ AddAutoFailoverNode(char *formationId,
 		replicationStateTypeOid, /* reportedstate */
 		INT4OID, /* candidate_priority */
 		BOOLOID,  /* replication_quorum */
-		TEXTOID   /* node name prefix */
+		TEXTOID,   /* node name prefix */
+		TEXTOID  /* pgdata of node */
 	};
 
 	Datum argValues[] = {
@@ -973,7 +978,8 @@ AddAutoFailoverNode(char *formationId,
 		ObjectIdGetDatum(reportedStateOid), /* reportedstate */
 		Int32GetDatum(candidatePriority),   /* candidate_priority */
 		BoolGetDatum(replicationQuorum),    /* replication_quorum */
-		CStringGetTextDatum(prefix)         /* prefix */
+		CStringGetTextDatum(prefix),         /* prefix */
+		CStringGetTextDatum(pgdata),        /* pgdata of node */
 	};
 
 	/*
@@ -997,7 +1003,8 @@ AddAutoFailoverNode(char *formationId,
 		' ',                            /* reportedstate */
 		' ',                            /* candidate_priority */
 		' ',                            /* replication_quorum */
-		' '                             /* prefix */
+		' ',                             /* prefix */
+		' ',                            /* pgdata of node */
 	};
 
 	const int argCount = sizeof(argValues) / sizeof(argValues[0]);
@@ -1024,10 +1031,10 @@ AddAutoFailoverNode(char *formationId,
 		"INSERT INTO " AUTO_FAILOVER_NODE_TABLE
 		" (formationid, nodeid, groupid, nodename, nodehost, nodeport, "
 		" sysidentifier, goalstate, reportedstate, "
-		" candidatepriority, replicationquorum)"
+		" candidatepriority, replicationquorum, pgdata)"
 		" SELECT $1, seq.nodeid, $2, "
 		" case when $3 is null then format('%s_%s', $11, seq.nodeid) else $3 end, "
-		" $4, $5, $6, $7, $8, $9, $10 "
+		" $4, $5, $6, $7, $8, $9, $10, $12"
 		" FROM seq "
 		"RETURNING nodeid";
 

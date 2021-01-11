@@ -118,6 +118,7 @@ CREATE TABLE pgautofailover.node
     statechangetime      timestamptz not null default now(),
     candidatepriority	 int not null default 100,
     replicationquorum	 bool not null default true,
+    pgdata               text not null,
 
     -- node names must be unique in a given formation
     UNIQUE (formationid, nodename),
@@ -234,6 +235,7 @@ CREATE FUNCTION pgautofailover.register_node
     IN node_port            int,
     IN dbname               name,
     IN node_name            text default '',
+    IN pgdata               text default '',
     IN sysidentifier        bigint default 0,
     IN desired_group_id     int default -1,
     IN initial_group_role   pgautofailover.replication_state default 'init',
@@ -251,7 +253,7 @@ RETURNS record LANGUAGE C STRICT SECURITY DEFINER
 AS 'MODULE_PATHNAME', $$register_node$$;
 
 grant execute on function
-      pgautofailover.register_node(text,text,int,name,text,bigint,int,pgautofailover.replication_state,text, int, bool)
+      pgautofailover.register_node(text,text,int,name,text,text,bigint,int,pgautofailover.replication_state,text, int, bool)
    to autoctl_node;
 
 

@@ -754,7 +754,7 @@ monitor_get_most_advanced_standby(Monitor *monitor,
  */
 bool
 monitor_register_node(Monitor *monitor, char *formation,
-					  char *name, char *host, int port,
+					  char *name, char *host, int port, char *pgdata,
 					  uint64_t system_identifier,
 					  char *dbname, int desiredGroupId, NodeState initialState,
 					  PgInstanceKind kind, int candidatePriority, bool quorum,
@@ -763,14 +763,14 @@ monitor_register_node(Monitor *monitor, char *formation,
 {
 	PGSQL *pgsql = &monitor->pgsql;
 	const char *sql =
-		"SELECT * FROM pgautofailover.register_node($1, $2, $3, $4, $5, $6, $7, "
-		"$8::pgautofailover.replication_state, $9, $10, $11)";
-	int paramCount = 11;
-	Oid paramTypes[11] = {
-		TEXTOID, TEXTOID, INT4OID, NAMEOID, TEXTOID, INT8OID,
-		INT4OID, TEXTOID, TEXTOID, INT4OID, BOOLOID
+		"SELECT * FROM pgautofailover.register_node($1, $2, $3, $4, $5, $6, $7, $8, "
+		"$9::pgautofailover.replication_state, $10, $11, $12)";
+	int paramCount = 12;
+	Oid paramTypes[12] = {
+		TEXTOID, TEXTOID, INT4OID, NAMEOID, TEXTOID, TEXTOID,
+		INT8OID, INT4OID, TEXTOID, TEXTOID, INT4OID, BOOLOID
 	};
-	const char *paramValues[11];
+	const char *paramValues[12];
 	MonitorAssignedStateParseContext parseContext =
 	{ { 0 }, { 0 }, assignedState, false };
 	const char *nodeStateString = NodeStateToString(initialState);
@@ -780,12 +780,13 @@ monitor_register_node(Monitor *monitor, char *formation,
 	paramValues[2] = intToString(port).strValue;
 	paramValues[3] = dbname;
 	paramValues[4] = name == NULL ? "" : name;
-	paramValues[5] = intToString(system_identifier).strValue;
-	paramValues[6] = intToString(desiredGroupId).strValue;
-	paramValues[7] = nodeStateString;
-	paramValues[8] = nodeKindToString(kind);
-	paramValues[9] = intToString(candidatePriority).strValue;
-	paramValues[10] = quorum ? "true" : "false";
+	paramValues[5] = pgdata;
+	paramValues[6] = intToString(system_identifier).strValue;
+	paramValues[7] = intToString(desiredGroupId).strValue;
+	paramValues[8] = nodeStateString;
+	paramValues[9] = nodeKindToString(kind);
+	paramValues[10] = intToString(candidatePriority).strValue;
+	paramValues[11] = quorum ? "true" : "false";
 
 	if (!pgsql_execute_with_params(pgsql, sql,
 								   paramCount, paramTypes, paramValues,

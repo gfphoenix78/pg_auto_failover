@@ -1300,6 +1300,7 @@ keeper_register_and_init(Keeper *keeper, NodeState initialState)
 								  config->name,
 								  config->hostname,
 								  config->pgSetup.pgport,
+								  config->pgSetup.pgdata,
 								  config->pgSetup.control.system_identifier,
 								  config->pgSetup.dbname,
 								  config->groupId,

@@ -24,7 +24,7 @@
  * indices must match with the columns given
  * in the following definition.
  */
-#define Natts_pgautofailover_node 19
+#define Natts_pgautofailover_node 20
 #define Anum_pgautofailover_node_formationid 1
 #define Anum_pgautofailover_node_nodeid 2
 #define Anum_pgautofailover_node_groupid 3
@@ -44,6 +44,7 @@
 #define Anum_pgautofailover_node_statechangetime 17
 #define Anum_pgautofailover_node_candidate_priority 18
 #define Anum_pgautofailover_node_replication_quorum 19
+#define Anum_pgautofailover_node_pgdata 20
 
 #define AUTO_FAILOVER_NODE_TABLE_ALL_COLUMNS \
 	"formationid, " \
@@ -64,7 +65,8 @@
 	"healthchecktime, " \
 	"statechangetime, " \
 	"candidatepriority, " \
-	"replicationquorum"
+	"replicationquorum, " \
+	"pgdata"
 
 
 #define SELECT_ALL_FROM_AUTO_FAILOVER_NODE_TABLE \
@@ -124,6 +126,7 @@ typedef struct AutoFailoverNode
 	XLogRecPtr reportedLSN;
 	int candidatePriority;
 	bool replicationQuorum;
+	char *pgdata;
 } AutoFailoverNode;
 
 
@@ -175,6 +178,7 @@ extern int AddAutoFailoverNode(char *formationId,
 							   char *nodeName,
 							   char *nodeHost,
 							   int nodePort,
+							   char *pgdata,
 							   uint64 sysIdentifier,
 							   ReplicationState goalState,
 							   ReplicationState reportedState,

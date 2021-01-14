@@ -1436,6 +1436,7 @@ rollback:
 bool
 keeper_remove(Keeper *keeper, KeeperConfig *config, bool ignore_monitor_errors)
 {
+	char filename[2048];
 	int errors = 0;
 
 	/*
@@ -1493,6 +1494,21 @@ keeper_remove(Keeper *keeper, KeeperConfig *config, bool ignore_monitor_errors)
 	{
 		/* we already logged about errors */
 		errors++;
+	}
+
+	log_info("==> pgdata: \"%s\"", config->pgSetup.pgdata);
+	if (build_xdg_path(filename, XDG_RUNTIME, config->pgSetup.pgdata,
+				KEEPER_POSTGRES_STATE_FILENAME))
+	{
+		log_info("Removing local status file \"%s\"", filename);
+		if (!unlink_file(filename))
+		{
+			log_info("status file doesn't exist");
+		}
+	}
+	else
+	{
+		log_info("Can't build file path for status file");
 	}
 
 	return errors == 0;

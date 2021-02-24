@@ -49,6 +49,8 @@ typedef struct CandidateList
 } CandidateList;
 
 
+extern bool remove_node_internal(AutoFailoverNode *currentNode);
+
 /* private function forward declarations */
 static bool ProceedGroupStateForPrimaryNode(AutoFailoverNode *primaryNode);
 static bool ProceedGroupStateForMSFailover(AutoFailoverNode *activeNode,
@@ -464,6 +466,11 @@ ProceedGroupState(AutoFailoverNode *activeNode)
 		/* done draining, node is presumed dead */
 		AssignGoalState(primaryNode, REPLICATION_STATE_DEMOTED, message);
 
+		ereport(LOG, (errmsg("REMOVE NODE")));
+		if (!remove_node_internal(primaryNode))
+			ereport(LOG, (errmsg("Can't remove node %s-%d",
+						primaryNode->nodeName,
+						primaryNode->nodeId)));
 		return true;
 	}
 
@@ -574,6 +581,11 @@ ProceedGroupState(AutoFailoverNode *activeNode)
 		/* done draining, node is presumed dead */
 		AssignGoalState(primaryNode, REPLICATION_STATE_DEMOTED, message);
 
+		ereport(LOG, (errmsg("REMOVE NODE")));
+		if (!remove_node_internal(primaryNode))
+			ereport(LOG, (errmsg("Can't remove node %s-%d",
+						primaryNode->nodeName,
+						primaryNode->nodeId)));
 		return true;
 	}
 
@@ -600,6 +612,11 @@ ProceedGroupState(AutoFailoverNode *activeNode)
 		/* done draining, node is presumed dead */
 		AssignGoalState(primaryNode, REPLICATION_STATE_DEMOTED, message);
 
+		ereport(LOG, (errmsg("REMOVE NODE")));
+		if (!remove_node_internal(primaryNode))
+			ereport(LOG, (errmsg("Can't remove node %s-%d",
+						primaryNode->nodeName,
+						primaryNode->nodeId)));
 		return true;
 	}
 

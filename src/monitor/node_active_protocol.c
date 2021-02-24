@@ -48,6 +48,7 @@ static int AssignGroupId(AutoFailoverFormation *formation,
 						 ReplicationState *initialState);
 
 static bool RemoveNode(AutoFailoverNode *currentNode);
+extern bool remove_node_internal(AutoFailoverNode *currentNode);
 
 /* SQL-callable function declarations */
 PG_FUNCTION_INFO_V1(register_node);
@@ -1153,6 +1154,10 @@ RemoveNode(AutoFailoverNode *currentNode)
 	PG_RETURN_BOOL(true);
 }
 
+bool remove_node_internal(AutoFailoverNode *currentNode)
+{
+	return RemoveNode(currentNode);
+}
 
 /*
  * perform_failover promotes the secondary in the given group

@@ -50,8 +50,6 @@ static void local_postgres_update_pg_failures_tracking(LocalPostgresServer *post
 	{ "hot_standby", "on" }, \
 	{ "synchronous_commit", "on" }, \
 	{ "logging_collector", "on" }, \
-	{ "log_destination", "stderr" }, \
-	{ "log_directory", "log" }, \
 	{ "log_min_messages", "info" }, \
 	{ "log_connections", "off" }, \
 	{ "log_disconnections", "off" }, \

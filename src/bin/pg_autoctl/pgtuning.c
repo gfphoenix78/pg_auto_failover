@@ -30,7 +30,6 @@
 GUC postgres_tuning[] = {
 	{ "track_functions", "pl" },
 	{ "shared_buffers", "'128 MB'" },
-	{ "work_mem", "'4 MB'" },
 	{ "maintenance_work_mem", "'64MB'" },
 	{ "effective_cache_size", "'4 GB'" },
 	{ "autovacuum_max_workers", "3" },

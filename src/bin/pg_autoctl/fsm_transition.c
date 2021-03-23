@@ -39,6 +39,7 @@
 #include "primary_standby.h"
 #include "state.h"
 
+#include "gp_spec.h"
 
 /*
  * fsm_init_primary initializes the postgres server as primary.
@@ -1148,6 +1149,14 @@ fsm_promote_standby(Keeper *keeper)
 				  "be started before promotion, see above for details");
 		return false;
 	}
+
+	/*
+	 * GPDB specific code:
+	 * Create the signal file for promotion, so the promoted standby knows
+	 * that it needs to notify the coordinator ID to all the segments.
+	 */
+	if (!gp_create_signal_file(postgres->postgresSetup.pgdata))
+		return false;
 
 	/*
 	 * If postgres is no longer in recovery mode, standby_promote returns true
